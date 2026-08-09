@@ -15,11 +15,13 @@ design choice.
 
 ## What it does
 
-1. **Scrapes** the 3 blog posts and chunks them into ~20 passages.
+1. **Scrapes** the blog posts and chunks them into passages.
 2. **Embeds** the chunks locally (no API calls) and persists them to a small
    on-disk vector store.
-3. **Answers questions** about the posts through a retrieve-then-generate CLI.
-4. **Evaluates** itself with 4 LLM-as-judge graders — correctness, relevance,
+3. **Re-indexes incrementally** — re-running `index.py` hashes each URL's
+   content and only re-embeds posts that actually changed.
+4. **Answers questions** about the posts through a retrieve-then-generate CLI.
+5. **Evaluates** itself with 4 LLM-as-judge graders — correctness, relevance,
    groundedness, and retrieval relevance — logged to LangSmith for
    inspection.
 
@@ -106,3 +108,4 @@ tracked in [`todo.md`](todo.md).
 | `todo.md` | Planned experiments and improvements |
 | `.env` / `.env.example` | API keys and config (gitignored; never commit `.env`) |
 | `vectorstore.json` | Persisted embeddings (gitignored; regenerate with `index.py`) |
+| `index_manifest.json` | Per-URL content hash + chunk ids, used by `index.py` to skip re-embedding unchanged posts (gitignored) |

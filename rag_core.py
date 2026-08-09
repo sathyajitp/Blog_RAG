@@ -12,6 +12,16 @@ URLS = [
     "https://dariusforoux.com/how-to-build-a-quiet-and-boring-life-that-you-love/",
     "https://dariusforoux.com/your-side-project-will-never-launch-and-how-to-fix-that/",
     "https://dariusforoux.com/the-usefulness-of-suffering/",
+    "https://dariusforoux.com/why-your-personal-brand-is-your-most-valuable-asset-in-the-ai-era/",
+    "https://dariusforoux.com/how-to-deal-with-negative-people-and-criticism/",
+    "https://dariusforoux.com/the-courage-to-live-on-your-own-terms/",
+    "https://dariusforoux.com/is-life-worse-today-compared-to-10-years-ago/",
+    "https://dariusforoux.com/this-thinking-mistake-destroys-your-life/",
+    "https://dariusforoux.com/how-to-express-yourself-clearly/",
+    "https://dariusforoux.com/the-mental-model-that-changed-my-entire-life/",
+    "https://dariusforoux.com/what-does-it-actually-mean-to-live-a-good-life/",
+    "https://dariusforoux.com/why-modern-life-feels-so-hard-even-when-youre-doing-well/",
+    
 ]
 
 VECTORSTORE_PATH = Path(__file__).parent / "vectorstore.json"
