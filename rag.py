@@ -1,9 +1,10 @@
-from rag_core import get_llm, load_retriever, make_rag_bot
+from rag_core import get_llm, get_reranker, load_retriever, make_rag_bot
 
 def main():
-    retriever = load_retriever()
+    retriever = load_retriever(k=20)
     llm = get_llm()
-    rag_bot = make_rag_bot(retriever, llm)
+    reranker = get_reranker()
+    rag_bot = make_rag_bot(retriever, llm, reranker=reranker, top_k=4)
 
     print("RAG system ready. Ask questions about the 3 Darius Foroux blog posts.")
     print("Type 'exit' or 'quit' to stop.\n")

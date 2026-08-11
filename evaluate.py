@@ -1,6 +1,6 @@
 from typing_extensions import Annotated, TypedDict
 from langsmith import Client
-from rag_core import get_llm, load_retriever, make_rag_bot, require_env
+from rag_core import get_llm, get_reranker, load_retriever, make_rag_bot, require_env
 
 require_env("LANGSMITH_API_KEY")
 
@@ -42,7 +42,7 @@ def get_or_create_dataset():
     return dataset
 
 
-# --- Evaluators (mirrors the LangSmith RAG tutorial) ---------------------
+# --- Evaluators ---------------------
 
 
 class CorrectnessGrade(TypedDict):
@@ -173,9 +173,10 @@ def build_evaluators():
 def main():
     dataset = get_or_create_dataset()
 
-    retriever = load_retriever()
+    retriever = load_retriever(k=20)
     llm = get_llm()
-    rag_bot = make_rag_bot(retriever, llm)
+    reranker = get_reranker()
+    rag_bot = make_rag_bot(retriever, llm, reranker=reranker, top_k=4)
 
     def target(inputs: dict) -> dict:
         return rag_bot(inputs["question"])

@@ -4,7 +4,7 @@ A minimal Retrieval-Augmented Generation (RAG) system that answers questions
 over 12 blog posts, with an LLM-as-judge evaluation pipeline
 and a retrieval-only evaluation pipeline, both built on LangSmith.
 
-Built as a hands-on walkthrough of the full RAG lifecycle - index, retrieve,
+Built as a hands-on walkthrough of the full RAG lifecycle - index, retrieve, rerank,
 generate, evaluate - using free/open tooling end to end (no OpenAI key
 required).
 
@@ -15,12 +15,15 @@ required).
    on-disk vector store.
 3. **Re-indexes incrementally** - re-running `index.py` hashes each URL's
    content and only re-embeds posts that actually changed.
-4. **Answers questions** about the posts through a retrieve-then-generate CLI.
-5. **Evaluates generation** with 4 LLM-as-judge graders - correctness,
+4. **Reranks** retrieved chunks with a cross-encoder before generation -
+   over-fetches candidates from the vector store, then rescores them for
+   relevance to the query and keeps only the top few.
+5. **Answers questions** about the posts through a retrieve-then-rerank-then-generate CLI.
+6. **Evaluates generation** with 4 LLM-as-judge graders - correctness,
    relevance, groundedness, and retrieval relevance - logged to LangSmith.
-6. **Evaluates retrieval in isolation** - hit rate@k and MRR against a
-   labeled (question → expected source URL) set, with no LLM call, also
-   logged to LangSmith.
+7. **Evaluates retrieval in isolation** - hit rate@k and MRR, both before and
+   after reranking, against a labeled (question → expected source URL) set,
+   with no LLM call, also logged to LangSmith.
 
 ## How it works
 
@@ -57,6 +60,7 @@ required).
 guaranteed to run the *exact* same pipeline.
 
 Stack: `HuggingFaceEmbeddings` (local, `all-MiniLM-L6-v2`) for embeddings,
+a `CrossEncoder` (`cross-encoder/ms-marco-MiniLM-L-6-v2`) for reranking,
 `ChatGroq` (`llama-3.3-70b-versatile`) for generation and grading,
 `InMemoryVectorStore` persisted to JSON for storage, LangSmith for eval
 tracking.
@@ -78,18 +82,18 @@ python retrieval_metrics.py      # run the retrieval-only eval (hit rate@k, MRR,
 ## What's next
 
 This is deliberately a small, complete slice of a RAG system, not a finished
-one. Planned next steps - chunking and embedding-model experiments, reranking, hybrid
+one. Planned next steps - chunking and embedding-model experiments, hybrid
 search, and eventually swapping in a real vector DB for deployment.
 
 ## Files
 
 | File | Purpose |
 |---|---|
-| `rag_core.py` | Shared config, embeddings, LLM, retriever, `rag_bot()` |
+| `rag_core.py` | Shared config, embeddings, LLM, reranker, retriever, `rag_bot()` |
 | `index.py` | One-time indexing: scrape → chunk → embed → persist to `vectorstore.json` |
-| `rag.py` | Interactive CLI: load persisted store, ask questions |
-| `evaluate.py` | Creates a LangSmith dataset, runs `rag_bot` over it, grades with 4 LLM-as-judge evaluators |
-| `retrieval_metrics.py` | Retrieval-only eval: hit rate@k, MRR against a labeled question → source set, no LLM call, logged to LangSmith |
+| `rag.py` | Interactive CLI: load persisted store, retrieve → rerank → ask questions |
+| `evaluate.py` | Creates a LangSmith dataset, runs `rag_bot` (retrieve → rerank → generate) over it, grades with 4 LLM-as-judge evaluators |
+| `retrieval_metrics.py` | Retrieval-only eval: hit rate@k, MRR before and after reranking, against a labeled question → source set, no LLM call, logged to LangSmith |
 | `.env` / `.env.example` | API keys and config|
 | `vectorstore.json` | Persisted embeddings|
 | `index_manifest.json` | Per-URL content hash + chunk ids, used by `index.py` to skip re-embedding unchanged posts|

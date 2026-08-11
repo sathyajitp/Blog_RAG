@@ -5,6 +5,7 @@ from langchain_core.documents import Document
 from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_groq import ChatGroq
 from langchain_huggingface import HuggingFaceEmbeddings
+from sentence_transformers import CrossEncoder
 
 load_dotenv()
 
@@ -26,6 +27,7 @@ URLS = [
 
 VECTORSTORE_PATH = Path(__file__).parent / "vectorstore.json"
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+RERANKER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 LLM_MODEL = "llama-3.3-70b-versatile"
 
 
@@ -45,6 +47,20 @@ def get_embeddings() -> HuggingFaceEmbeddings:
 def get_llm() -> ChatGroq:
     require_env("GROQ_API_KEY")
     return ChatGroq(model=LLM_MODEL, temperature=0)
+
+
+def get_reranker() -> CrossEncoder:
+    return CrossEncoder(RERANKER_MODEL)
+
+
+def rerank(reranker: CrossEncoder, query: str, docs: list[Document], top_k: int) -> list[Document]:
+    """Score each doc against the query with a cross-encoder and keep the top_k."""
+    if not docs:
+        return docs
+    pairs = [(query, doc.page_content) for doc in docs]
+    scores = reranker.predict(pairs)
+    ranked = sorted(zip(docs, scores), key=lambda pair: pair[1], reverse=True)
+    return [doc for doc, _ in ranked[:top_k]]
 
 
 def load_retriever(k: int = 4):
@@ -72,9 +88,11 @@ Keep the answer concise.
 </context>"""
 
 
-def make_rag_bot(retriever, llm):
+def make_rag_bot(retriever, llm, reranker: CrossEncoder | None = None, top_k: int = 4):
     def rag_bot(question: str) -> dict:
         docs = retriever.invoke(question)
+        if reranker is not None:
+            docs = rerank(reranker, question, docs, top_k)
         instructions = RAG_INSTRUCTIONS.format(context=format_docs(docs))
         ai_msg = llm.invoke(
             [
