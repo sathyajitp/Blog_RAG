@@ -1,11 +1,11 @@
-import os
-from pathlib import Path
-from dotenv import load_dotenv
-from langchain_core.documents import Document
-from langchain_core.vectorstores import InMemoryVectorStore
-from langchain_groq import ChatGroq
-from langchain_huggingface import HuggingFaceEmbeddings
-from sentence_transformers import CrossEncoder
+import os   
+from pathlib import Path    # For controlling paths/directories
+from dotenv import load_dotenv  # Configuring env variables
+from langchain_core.documents import Document   # Used to store text and its corresponding metadata, used in RAG systems
+from langchain_core.vectorstores import InMemoryVectorStore # A vector store which stores the following {"id": str, "vector": List[Float], "text": str, "metadata":str}. Lives in a self.store dictionary in the system RAM while running, erased from RAM otherwise. Only stored on the disk as a json file if explicitly done so.
+from langchain_groq import ChatGroq # Access to low-latency models through Groq. Uses LPU under the hood instead of GPU
+from langchain_huggingface import HuggingFaceEmbeddings # Free embedding model
+from sentence_transformers import CrossEncoder  # Reranking
 
 load_dotenv()
 
@@ -22,15 +22,16 @@ URLS = [
     "https://dariusforoux.com/the-mental-model-that-changed-my-entire-life/",
     "https://dariusforoux.com/what-does-it-actually-mean-to-live-a-good-life/",
     "https://dariusforoux.com/why-modern-life-feels-so-hard-even-when-youre-doing-well/",
-    
-]
+] # URLS to be loaded
+
+# Initialising models and vectorstore paths
 
 VECTORSTORE_PATH = Path(__file__).parent / "vectorstore.json"
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 RERANKER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 LLM_MODEL = "llama-3.3-70b-versatile"
 
-
+# Retrieving GROQ_API_KEY with check
 def require_env(name: str) -> str:
     value = os.environ.get(name)
     if not value:
@@ -40,6 +41,7 @@ def require_env(name: str) -> str:
     return value
 
 
+# Factory Function returning a huggingfaceembddings instance, used in encapsulation to hide actual implementation.
 def get_embeddings() -> HuggingFaceEmbeddings:
     return HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
 
